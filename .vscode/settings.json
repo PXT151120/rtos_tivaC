@@ -1,0 +1,9 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "bsp.h": "c",
+        "tm4c123gh6pm.h": "c",
+        "system_tm4c123gh6pm.h": "c",
+        "stdint.h": "c"
+    }
+}

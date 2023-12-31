@@ -1,0 +1,7 @@
+"./tm4c123gh6pm_startup_ccs_gcc.o"
+"./ek-tm4c123gxl/system_TM4C123GH6PM.o"
+"./src/bsp.o"
+"./src/main.o"
+"./src/os.o"
+"C:/ti/TivaWare_C_Series-2.2.0.295/driverlib/ccs/Debug/driverlib.lib"
+-Wl,-T"../tm4c123gh6pm.lds"
