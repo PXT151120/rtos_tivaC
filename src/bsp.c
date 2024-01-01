@@ -84,9 +84,10 @@ void BSP_delay(uint32_t ticks)
 
 void OS_onStartup()
 {
-	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_2_5);
+	//SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_2_5);
+	SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |SYSCTL_XTAL_16MHZ);
 	SysTick->CTRL = 0x07;
-	SysTick->LOAD = (uint32_t)(SysCtlClockGet() / SYSTICKS_TIME) - 1;
+	SysTick->LOAD = (uint32_t)(SYSTICKS_TIME) - 1;
 	// SysTick->CTRL = 0x03;
 	// SysTick->LOAD = 399;
 

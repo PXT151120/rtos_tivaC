@@ -2,10 +2,15 @@
 #ifndef INC_OS_H_
 #define INC_OS_H_
 #include <stdint.h>
+#include <stdio.h>
+
 #include "bsp.h"
 
 #define STACK_SIZE	    40
-#define MAX_THREADS     (30 + 1)
+#define MAX_THREADS     32
+
+#define LOG2(x)         (MAX_THREADS - __builtin_clz(x))
+
 
 extern void assert_failed(const char *module, int loc);
 
@@ -14,6 +19,7 @@ typedef struct
 {   
     void *sp;
     uint32_t timeOut;
+    uint8_t priority;
 }OsThread_st;
 
 extern OsThread_st blinky1;
@@ -27,6 +33,7 @@ void main_IdleThread(void);
 
 void OSThread_Start(OsThread_st *me,
                     OsThreadHandler threadHandler,
+                    uint8_t piority,
                     void *stkSto,
                     uint32_t stkSize);
 

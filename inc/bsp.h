@@ -7,7 +7,7 @@
 #include "TM4C123GH6PM.h"
 #include "os.h"
 
-#define SYSTICKS_TIME    2e5
+#define SYSTICKS_TIME    16e3
 
 #define TRUE 	(1 != 0)
 #define FALSE	(1 == 0)
