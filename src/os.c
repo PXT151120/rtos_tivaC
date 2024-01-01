@@ -6,10 +6,96 @@ OsThread_st * volatile OS_curr_ptr;
 OsThread_st * volatile OS_next_ptr;
 
 OsThread_st *OS_Threads[MAX_THREADS];
-uint8_t threadsCnt_gu8 = 0;
-uint8_t currIdx_gu8 = 0;
+uint32_t OS_readySet;
+uint8_t OS_threadsCnt_gu8 = 0;
+uint8_t OS_currIdx_gu8 = 0;
 
-static uint16_t stackTime_Cnt;
+
+OsThread_st idleThread;
+
+void main_IdleThread()
+{
+	while(TRUE)
+	{
+		OS_onIdle();
+	}
+}
+
+void OS_Init(void *stkSto, uint32_t stkSize)
+{
+    *(uint32_t volatile *)0xE000ED20 |= (0xFF << 16);
+
+    OSThread_Start(&idleThread,
+                    &main_IdleThread,
+                    stkSto,
+                    stkSize);
+}
+
+void OS_Schedule()
+{
+
+    if (OS_readySet == 0)   /*No thread is ready*/
+    {
+        OS_currIdx_gu8 = 0;
+    }
+    else
+    {
+        do
+        {
+            ++OS_currIdx_gu8;
+            if (OS_currIdx_gu8 == OS_threadsCnt_gu8)
+            {
+                OS_currIdx_gu8 = 1;
+            }
+        } while ((OS_readySet & (1 << (OS_currIdx_gu8 - 1))) == 0); /*Context switching for thread that is ready to run*/
+    }
+
+    OsThread_st * const next = OS_Threads[OS_currIdx_gu8];
+
+    /* Trigger PendSV_Handler*/
+    if (next != OS_curr_ptr)
+    {
+    	OS_next_ptr = next;
+    	*(uint32_t volatile *)0xE000ED04 = (1 << 28);
+    }
+}
+
+void OS_Run()
+{
+    OS_onStartup();
+
+    __asm volatile ("cpsid i" : : : "memory");
+	OS_Schedule();
+	__asm volatile ("cpsie i" : : : "memory");
+
+}
+
+void OS_tick()
+{
+    uint8_t index_ldu8;
+    for (index_ldu8 = 1; index_ldu8 < OS_threadsCnt_gu8; index_ldu8++)
+    {
+        if (OS_Threads[index_ldu8]->timeOut != 0)
+        {
+            --OS_Threads[index_ldu8]->timeOut;
+
+            if (OS_Threads[index_ldu8]->timeOut == 0)
+            {
+                OS_readySet |= (1 << (index_ldu8 - 1));
+            }
+        }
+    }
+}
+
+void OS_delay(uint32_t ticks)
+{
+    __asm volatile ("cpsid i" : : : "memory");
+    OS_curr_ptr->timeOut = ticks;
+    OS_readySet &= ~(1 << (OS_currIdx_gu8 - 1)); /*Block current task*/
+    OS_Schedule();
+    __asm volatile ("cpsie i" : : : "memory");
+
+}
 
 void OSThread_Start(OsThread_st *me,
                     OsThreadHandler threadHandler,
@@ -46,79 +132,27 @@ void OSThread_Start(OsThread_st *me,
         *(--stkPtr_u32) = 0xDEADBEEFu;
     }
 
-    if (threadsCnt_gu8 <= MAX_THREADS)
+    if (OS_threadsCnt_gu8 <= MAX_THREADS)
     {
-        OS_Threads[threadsCnt_gu8] = me;
-        ++threadsCnt_gu8;
+        OS_Threads[OS_threadsCnt_gu8] = me;
+        //OS_threadsCnt_gu8;
     }
     else
     {
         assert_failed("os.c", 52);
     }
 
+    /* OS_readySet bitmask must be set with right postion or there will be no jump to Idle state*/
+    if (OS_threadsCnt_gu8 > 0)
+    {
+        OS_readySet |= (1 << (OS_threadsCnt_gu8 - 1));
+    }
 
-    
+    ++OS_threadsCnt_gu8;
+
 }
 
-void OS_Init()
-{
-    *(uint32_t volatile*)0xE000ED20UL |= (0xFF << 16);
-}
 
-void OS_Schedule()
-{
-    uint8_t contextSwitch = 0;
-
-    if (OS_curr_ptr == (void*)0)
-    {
-        OS_next_ptr = OS_Threads[currIdx_gu8];
-    }
-
-    OS_Threads[currIdx_gu8]->time++;
-    if (OS_Threads[currIdx_gu8] == &blinky1)
-    {
-        if (OS_Threads[currIdx_gu8]->time > 200)
-        {
-            contextSwitch = 1;
-        }
-    }
-    else if (OS_Threads[currIdx_gu8] == &blinky2)
-    {
-        if (OS_Threads[currIdx_gu8]->time > 1000)
-        {
-            contextSwitch = 1;
-        }
-    }
-    else
-    {
-
-    }
-
-    if (contextSwitch == 1)
-    {
-        OS_Threads[currIdx_gu8]->time = 0;
-        ++currIdx_gu8;
-        if (currIdx_gu8 == threadsCnt_gu8)
-        {
-            currIdx_gu8 = 0;
-        }
-        OS_next_ptr = OS_Threads[currIdx_gu8];
-        
-    }
-    
-
-    /* Trigger PendSV_Handler*/
-    *(uint32_t volatile*)0xE000ED04UL |= (1 << 28);
-}
-
-void OS_Run()
-{
-    OS_onStartup();
-    __asm volatile ("cpsid i" : : : "memory");
-	OS_Schedule();
-	__asm volatile ("cpsie i" : : : "memory");
-
-}
 
 __attribute__ ((naked, optimize("-fno-stack-protector")))
 void PendSV_Handler(void) {

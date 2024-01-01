@@ -128,21 +128,21 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXE_OUTPUTS += \
-RTOS.out \
+rtos_tivaC.out \
 
 EXE_OUTPUTS__QUOTED += \
-"RTOS.out" \
+"rtos_tivaC.out" \
 
 
 # All Target
 all: $(OBJS) $(LDS_SRCS) $(LIB_SRCS) $(GEN_CMDS)
-	@$(MAKE) --no-print-directory -Onone "RTOS.out"
+	@$(MAKE) --no-print-directory -Onone "rtos_tivaC.out"
 
 # Tool invocations
-RTOS.out: $(OBJS) $(LDS_SRCS) $(LIB_SRCS) $(GEN_CMDS)
+rtos_tivaC.out: $(OBJS) $(LDS_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: GNU Linker'
-	"C:/ti/ccs1240/ccs/tools/compiler/gcc-arm-none-eabi-9-2019-q4-major/bin/arm-none-eabi-gcc-9.2.1.exe" -DPART_TM4C123GH6PM -O0 -ffunction-sections -fdata-sections -g -gdwarf-3 -gstrict-dwarf -Wall -specs="nosys.specs" -mcpu=cortex-m4 -Wl,-Map,"RTOS.map" -o"RTOS.out" $(ORDERED_OBJS)
+	"C:/ti/ccs1240/ccs/tools/compiler/gcc-arm-none-eabi-9-2019-q4-major/bin/arm-none-eabi-gcc-9.2.1.exe" -DPART_TM4C123GH6PM -O0 -ffunction-sections -fdata-sections -g -gdwarf-3 -gstrict-dwarf -Wall -specs="nosys.specs" -mcpu=cortex-m4 -Wl,-Map,"rtos_tivaC.map" -o"rtos_tivaC.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 

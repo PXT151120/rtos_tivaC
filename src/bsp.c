@@ -1,6 +1,10 @@
 
 #include "bsp.h"
 #include "driverlib/sysctl.h"
+
+
+
+
 static uint32_t volatile l_tickCtr;
 
 
@@ -8,6 +12,10 @@ void BSP_Init()
 {
 	SYSCTL->RCGCGPIO |= (1 << 5);
 	SYSCTL->GPIOHBCTL |= (1 << 5);
+
+    __ISB(); /* Instruction Synchronization Barrier */
+    __DSB(); /* Data Memory Barrier */
+
 	GPIOF_AHB->DIR |= (LED_BLUE | LED_RED | LED_GREEN | TEST_PIN);
 	GPIOF_AHB->DEN |= (LED_BLUE | LED_RED | LED_GREEN | TEST_PIN);
 
@@ -46,7 +54,9 @@ void BSP_ledRedOff()
 void SysTick_Handler()
 {
 	GPIOF_AHB->DATA_Bits[TEST_PIN] = TEST_PIN;
-	++l_tickCtr;
+	// ++l_tickCtr;
+
+	OS_tick();
 
 	__asm volatile ("cpsid i" : : : "memory");
 	OS_Schedule();
@@ -77,11 +87,17 @@ void OS_onStartup()
 	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_2_5);
 	SysTick->CTRL = 0x07;
 	SysTick->LOAD = (uint32_t)(SysCtlClockGet() / SYSTICKS_TIME) - 1;
+	// SysTick->CTRL = 0x03;
+	// SysTick->LOAD = 399;
 
 	NVIC_SetPriority(SysTick_IRQn, 0);
 }
 
-
+void OS_onIdle()
+{
+    GPIOF_AHB->DATA_Bits[LED_BLUE] = LED_BLUE;
+    GPIOF_AHB->DATA_Bits[LED_BLUE] = 0U;
+}
 
 void assert_failed(char const *module, int loc) {
     /* TBD: damage control */
